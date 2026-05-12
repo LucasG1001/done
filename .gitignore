@@ -1,0 +1,48 @@
+*.iml
+.gradle
+/local.properties
+/.idea/caches
+/.idea/libraries
+/.idea/modules.xml
+/.idea/workspace.xml
+/.idea/navEditor.xml
+/.idea/assetWizardSettings.xml
+.DS_Store
+/build
+/captures
+.externalNativeBuild
+.cxx
+local.properties
+
+# Gradle
+.gradle/
+build/
+*/build/
+
+# Mac
+.DS_Store
+
+# Windows
+Thumbs.db
+
+# Android Studio
+*.iml
+.idea/
+.gradle/
+local.properties
+/build/
+
+# NDK
+obj/
+
+# Keystore files
+*.jks
+*.keystore
+*.p12
+*.pfx
+
+# Google Services (e.g. APIs or Firebase)
+google-services.json
+
+# Profiling
+*.hprof

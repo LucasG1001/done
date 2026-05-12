@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Done</string>
+
+    <!-- Today screen -->
+    <string name="today_title">Meus hábitos</string>
+    <string name="today_progress">Progresso do dia</string>
+    <string name="today_completed">concluídos</string>
+    <string name="today_avg_streak">streak médio</string>
+    <string name="today_best_record">melhor recorde</string>
+    <string name="today_add_habit">Adicionar hábito</string>
+    <string name="today_check_undone">Check desfeito</string>
+    <string name="today_already_complete">Hábito já completo hoje</string>
+    <string name="today_not_found">Hábito não encontrado</string>
+
+    <!-- Habit card -->
+    <string name="habit_checks_per_day">%dx ao dia</string>
+    <string name="habit_streak_days">%d dias</string>
+    <string name="habit_record">recorde: %d</string>
+    <string name="habit_complete">✓ completo</string>
+    <string name="habit_progress">%d/%d</string>
+
+    <!-- Manage screen -->
+    <string name="manage_new_title">Novo hábito</string>
+    <string name="manage_edit_title">Editar hábito</string>
+    <string name="manage_name_label">Nome do hábito</string>
+    <string name="manage_icon_label">Ícone</string>
+    <string name="manage_color_label">Cor</string>
+    <string name="manage_checks_label">Checks por dia</string>
+    <string name="manage_preview_label">Preview</string>
+    <string name="manage_save">Salvar alterações</string>
+    <string name="manage_create">Criar hábito</string>
+
+    <!-- Validation -->
+    <string name="validation_name_empty">Nome do hábito não pode ser vazio</string>
+    <string name="validation_name_too_long">Nome deve ter no máximo 50 caracteres</string>
+    <string name="validation_checks_range">Checks por dia deve ser entre 1 e 20</string>
+
+    <!-- Detail screen -->
+    <string name="detail_checks_per_day">%dx ao dia</string>
+    <string name="detail_current_streak">streak atual</string>
+    <string name="detail_best_streak">melhor streak</string>
+    <string name="detail_last_30">últimos 30d</string>
+    <string name="detail_history">Histórico</string>
+    <string name="detail_last_14">Últimos 14 dias</string>
+    <string name="detail_edit">Editar</string>
+    <string name="detail_archive">Arquivar</string>
+    <string name="detail_less">Menos</string>
+    <string name="detail_more">Mais</string>
+
+    <!-- Stats screen -->
+    <string name="stats_title">Estatísticas</string>
+    <string name="stats_overview">Visão geral</string>
+    <string name="stats_today">hoje</string>
+    <string name="stats_this_week">esta semana</string>
+    <string name="stats_this_month">este mês</string>
+    <string name="stats_best_streak_active">Maior streak ativo</string>
+    <string name="stats_most_consistent">Mais consistente</string>
+    <string name="stats_per_habit">Por hábito</string>
+    <string name="stats_streak_format">Streak: %d dias</string>
+    <string name="stats_record_format">Recorde: %d dias</string>
+    <string name="stats_checks_format">%d checks</string>
+
+    <!-- Navigation -->
+    <string name="nav_today">Hoje</string>
+    <string name="nav_manage">Gerenciar</string>
+    <string name="nav_stats">Estatísticas</string>
+    <string name="nav_back">Voltar</string>
+</resources>
