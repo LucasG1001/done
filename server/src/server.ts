@@ -12,7 +12,8 @@ app.use(express.json())
 
 app.use('/habits', habitsRouter)
 
-app.listen(PORT, async () => {
-  await migrate()
+await migrate()
+
+app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`)
 })

@@ -1,47 +1,170 @@
 # Padrões e Boas Práticas do Backend (Done)
-*Leia este arquivo antes de sugerir ou escrever qualquer código para o backend deste projeto.*
+*Leia este arquivo antes de sugerir ou escrever qualquer código para este projeto.*
+
+## 0. Visão Geral do Projeto
+
+**Done** é um habit tracker minimalista. O sistema tem três partes:
+- `web/` — Frontend React + Vite + TypeScript (CSS Modules, sem bibliotecas de UI)
+- `server/` — Backend Node.js + Express + PostgreSQL (este diretório)
+- `android/` — Ignorado por ora
+
+O frontend se comunica exclusivamente com o backend via API REST. Nenhum dado é persistido no cliente. Os dados mockados (`web/src/data/mockHabits.ts`) foram abandonados e existem apenas como referência.
+
+---
 
 ## 1. Idioma e Comentários
 - **Código em Inglês:** Variáveis, funções, tipos, rotas, arquivos e pastas.
-- **Mensagens de erro para o usuário em Português:** Strings retornadas nos campos `error` do JSON.
+- **Mensagens de erro ao usuário em Português:** Strings retornadas nos campos `error` do JSON.
 - **Zero Comentários:** Código limpo e autoexplicativo. Sem comentários no código final.
 
+---
+
 ## 2. Stack Técnica e Restrições
-- **Runtime:** Node.js com TypeScript (modo estrito `strict: true`). Proibido o uso de `any` e `eslint-disable`.
+- **Runtime:** Node.js com TypeScript (`strict: true`). Proibido `any` e `eslint-disable`.
 - **Framework:** Express 5.
 - **Banco de Dados:** PostgreSQL via `pg` (pool de conexão). Nenhum ORM.
-- **Dev Runner:** `tsx watch` para hot-reload em desenvolvimento.
+- **Dev Runner:** `tsx watch src/server.ts` para hot-reload em desenvolvimento.
+- **Build de Produção:** `tsc` compila para `dist/`. Em produção roda `node dist/server.js`.
 - **Variáveis de Ambiente:** Carregadas via `dotenv`. Nunca hardcoded no código.
+- **Module System:** `"module": "NodeNext"` no tsconfig — imports internos usam extensão `.js` mesmo sendo `.ts` (ex: `import { pool } from '../db.js'`).
+
+---
 
 ## 3. Convenções de Nomenclatura
-- **Banco de dados:** `snake_case` para nomes de tabelas e colunas (`selected_days`, `created_at`).
+- **Banco de dados:** `snake_case` para tabelas e colunas (`selected_days`, `created_at`).
 - **Código TypeScript e JSON da API:** `camelCase` (`selectedDays`, `createdAt`).
-- A camada de rotas é responsável por fazer o mapeamento entre os dois formatos.
+- A camada de rotas (`routes/habits.ts`) é responsável por mapear entre os dois formatos via a função `toHabitResponse`.
+
+---
 
 ## 4. Estrutura de Pastas
 ```
 server/
   src/
-    db.ts           ← pool de conexão PostgreSQL
-    migrate.ts      ← criação de tabelas (idempotente)
-    server.ts       ← entry point Express
+    db.ts           ← pool de conexão PostgreSQL (usa DATABASE_URL do .env)
+    migrate.ts      ← criação de tabelas (idempotente, IF NOT EXISTS)
+    server.ts       ← entry point: roda migrate() ANTES do listen()
     routes/
-      habits.ts     ← rotas REST de hábitos
+      habits.ts     ← todas as rotas REST de hábitos
+  .env              ← credenciais locais (não vai para o git)
+  .env.example      ← template das variáveis (vai para o git) — fica na raiz do projeto
+  Dockerfile        ← multi-stage: compila TS → imagem final lean
+  .dockerignore
+  AI_RULES_BACKEND.md
 ```
 
-## 5. Padrões de API
-- Retornar `404` quando um recurso não é encontrado.
-- Retornar `201` em criações bem-sucedidas.
-- Retornar `204` em deleções bem-sucedidas.
-- Sempre retornar o objeto completo e atualizado após PUT/PATCH.
-- O campo `completed` em `habit_completions` é `BOOLEAN` — um PATCH em `/habits/:id/toggle/:date` inverte o valor (INSERT se não existir).
+---
 
-## 6. Banco de Dados
-- Conexão via SSH tunnel local: `127.0.0.1:5432`
-- Tabelas principais: `habits`, `habit_completions`
-- `habit_completions` tem constraint `UNIQUE(habit_id, date)` para evitar duplicatas.
-- A migration roda automaticamente no startup (`await migrate()` antes do `listen`).
+## 5. Schema do Banco de Dados
+```sql
+CREATE TABLE habits (
+  id           UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name         TEXT NOT NULL,
+  selected_days INTEGER[] NOT NULL,
+  current_streak INTEGER NOT NULL DEFAULT 0,
+  longest_streak INTEGER NOT NULL DEFAULT 0,
+  level        INTEGER NOT NULL DEFAULT 1,
+  created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at   TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
 
-## 7. Evolução destas Regras (Nota para a IA)
+CREATE TABLE habit_completions (
+  id       UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  habit_id UUID NOT NULL REFERENCES habits(id) ON DELETE CASCADE,
+  date     TEXT NOT NULL,           -- formato: "YYYY-MM-DD"
+  completed BOOLEAN NOT NULL DEFAULT TRUE,
+  UNIQUE(habit_id, date)
+);
+```
+
+**Observações importantes:**
+- `selected_days` é `INTEGER[]` — array de dias da semana (0=Dom, 1=Seg, …, 6=Sáb).
+- `date` em `habit_completions` é `TEXT` no formato `"YYYY-MM-DD"`, não `DATE`, para evitar problemas de timezone.
+- `current_streak`, `longest_streak` e `level` são **calculados pelo frontend** após cada resposta da API usando as funções em `web/src/utils/`. O banco os armazena mas não os recalcula.
+- `habit_completions` tem `UNIQUE(habit_id, date)` — o toggle usa INSERT ou UPDATE, nunca duplica.
+
+---
+
+## 6. Rotas da API
+
+Base URL em dev: `http://localhost:3333`
+Base URL em produção: `/api` (proxied pelo nginx — veja seção de Deploy)
+
+| Método | Rota | Descrição |
+|--------|------|-----------|
+| GET | `/habits` | Retorna todos os hábitos com suas completions |
+| POST | `/habits` | Cria um hábito (body: `{ name, selectedDays }`) |
+| PUT | `/habits/:id` | Atualiza nome e dias (body: `{ name, selectedDays }`) |
+| DELETE | `/habits/:id` | Exclui o hábito e suas completions (cascade) |
+| PATCH | `/habits/:id/toggle/:date` | Inverte o `completed` de uma data (`date` = `YYYY-MM-DD`) |
+
+**Padrões de resposta:**
+- `201` em criações, `204` em deleções, `404` quando não encontrado.
+- PUT e PATCH sempre retornam o objeto completo e atualizado.
+- `GET /habits` faz duas queries: uma para `habits`, outra para `habit_completions`, e monta a resposta em memória (evita N+1).
+
+---
+
+## 7. Ambientes
+
+### Desenvolvimento (local)
+```bash
+# Pré-requisito: SSH tunnel ativo para o PostgreSQL de testes na VPS
+ssh -L 5432:localhost:5432 lucas@187.77.62.157
+
+# Rodar o servidor
+cd server && npm run dev
+```
+O arquivo `server/.env` aponta para `127.0.0.1:5432` (banco de testes na VPS).
+
+### Produção (Docker na VPS)
+Toda a stack roda em Docker Compose auto-suficiente — **PostgreSQL próprio**, sem depender do banco de testes.
+
+```
+VPS: 187.77.62.157  (user: lucas)
+
+docker-compose.yml (na raiz do projeto):
+  ├── postgres   → volume persistente (postgres_data)
+  ├── server     → conecta em postgres:5432
+  └── web/nginx  → 127.0.0.1:8080 (invisível externamente)
+                   /api/* proxied para server:3333
+```
+
+**Acesso à produção via SSH tunnel:**
+```bash
+ssh -L 8080:localhost:8080 lucas@187.77.62.157
+# abrir: http://localhost:8080
+```
+
+Variáveis de ambiente de produção ficam em `.env` na **raiz do projeto** na VPS (nunca no git). Template em `.env.example`.
+
+---
+
+## 8. Deploy e CI/CD
+
+Todo push na branch `main` dispara o GitHub Actions (`.github/workflows/deploy.yml`):
+1. SSH na VPS
+2. `git pull origin main`
+3. `docker compose up -d --build --remove-orphans`
+4. `docker image prune -f`
+
+**GitHub Secrets necessários:**
+- `VPS_HOST` = `187.77.62.157`
+- `VPS_USER` = `lucas`
+- `VPS_SSH_KEY` = chave privada SSH
+- `VPS_APP_PATH` = `/home/lucas/done` (ou onde o repo estiver clonado)
+
+---
+
+## 9. Frontend — Como se Integra
+
+O frontend (`web/`) usa:
+- `web/src/services/habitApi.ts` — camada de serviço com todos os `fetch`. A URL base é `import.meta.env.VITE_API_URL ?? 'http://localhost:3333'`. Em produção, o Dockerfile do web injeta `VITE_API_URL=/api` em build time.
+- `web/src/hooks/useHabits.ts` — consome `habitApi.ts`, gerencia estado com `useState`, expõe `loading` e `error`.
+- Streak, nível e estatísticas são **recalculados no frontend** via `web/src/utils/streakUtils.ts` e `levelUtils.ts` após cada resposta da API.
+
+---
+
+## 10. Evolução destas Regras (Nota para a IA)
 - **Atualização Contínua:** Se identificar um padrão importante não documentado, adicione aqui.
-- **Seja Conciso:** Mantenha as adições curtas e diretas.
+- **Seja Conciso:** Mantenha as adições curtas e diretas, este arquivo é sua memória do projeto.
