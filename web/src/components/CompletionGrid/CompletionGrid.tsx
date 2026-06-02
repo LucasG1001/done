@@ -130,10 +130,10 @@ export function CompletionGrid({ completions, selectedDays, createdAt }: Complet
   const offset = getFirstDayOffset(viewMonth.year, viewMonth.month)
 
   const stateClassMap: Record<DayState, string> = {
-    completed: styles.completed,
-    missed: styles.missed,
-    notScheduled: styles.notScheduled,
-    future: styles.future,
+    completed: styles.completed ?? '',
+    missed: styles.missed ?? '',
+    notScheduled: styles.notScheduled ?? '',
+    future: styles.future ?? '',
   }
 
   return (
