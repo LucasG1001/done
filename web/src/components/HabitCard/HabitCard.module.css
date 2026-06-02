@@ -1,0 +1,136 @@
+.card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 20px;
+  background-color: var(--bg-card);
+  border-radius: var(--radius-card);
+  border: 1px solid var(--border-subtle);
+  cursor: pointer;
+  transition: background-color var(--transition-base),
+              box-shadow var(--transition-base),
+              opacity var(--transition-base);
+  user-select: none;
+}
+
+.card:hover {
+  background-color: var(--bg-card-hover);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
+}
+
+.notScheduled {
+  opacity: 0.45;
+}
+
+.content {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.name {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.daysRow {
+  display: flex;
+  gap: 6px;
+}
+
+.dayLabel {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-muted);
+  width: 18px;
+  text-align: center;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.dayActive {
+  color: var(--accent);
+}
+
+.dayToday {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.streakRow {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.streakIcon {
+  font-size: 12px;
+  color: var(--streak-color);
+}
+
+.streakValue {
+  color: var(--streak-color);
+  font-weight: 600;
+}
+
+.toggle {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-circle);
+  border: 2px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: all var(--transition-fast);
+  cursor: pointer;
+  background: transparent;
+}
+
+.toggle:hover {
+  border-color: var(--success);
+}
+
+.toggleDone {
+  background-color: var(--success);
+  border-color: var(--success);
+  transform: scale(1.15);
+  box-shadow: 0 0 16px var(--success-glow);
+}
+
+.toggleDone:hover {
+  background-color: var(--success);
+  border-color: var(--success);
+}
+
+.checkIcon {
+  width: 20px;
+  height: 20px;
+  color: #fff;
+  opacity: 0;
+  transition: opacity var(--transition-fast);
+}
+
+.toggleDone .checkIcon {
+  opacity: 1;
+}
+
+@media (max-width: 420px) {
+  .card {
+    padding: 12px 14px;
+    gap: 10px;
+  }
+
+  .toggle {
+    width: 40px;
+    height: 40px;
+  }
+}
