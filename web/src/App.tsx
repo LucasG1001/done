@@ -5,6 +5,7 @@ import { Header } from './components/Header/Header'
 import { HabitCard } from './components/HabitCard/HabitCard'
 import { SidePanel } from './components/SidePanel/SidePanel'
 import { HabitForm } from './components/HabitForm/HabitForm'
+import { InfoGuide } from './components/InfoGuide/InfoGuide'
 import styles from './App.module.css'
 
 interface FormState {
@@ -21,6 +22,7 @@ export function App() {
     mode: 'create',
     editingHabit: null,
   })
+  const [isInfoOpen, setIsInfoOpen] = useState(false)
 
   function handleOpenCreate() {
     setFormState({ isOpen: true, mode: 'create', editingHabit: null })
@@ -63,7 +65,7 @@ export function App() {
 
   return (
     <div className={styles.app}>
-      <Header />
+      <Header onInfoClick={() => setIsInfoOpen(true)} />
 
       {habits.length === 0 ? (
         <div className={styles.emptyState}>
@@ -117,6 +119,10 @@ export function App() {
           onSave={handleSaveForm}
           onClose={handleCloseForm}
         />
+      )}
+
+      {isInfoOpen && (
+        <InfoGuide onClose={() => setIsInfoOpen(false)} />
       )}
     </div>
   )
