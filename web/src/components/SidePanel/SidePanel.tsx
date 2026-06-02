@@ -104,11 +104,11 @@ export function SidePanel({ habit, onClose, onEdit, onDelete }: SidePanelProps) 
 
           <div className={styles.divider} />
 
-          <span className={styles.sectionTitle}>Últimos 30 dias</span>
           <div className={styles.gridContainer}>
             <CompletionGrid
               completions={habit.completions}
               selectedDays={habit.selectedDays}
+              createdAt={habit.createdAt}
             />
           </div>
 
