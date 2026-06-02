@@ -15,7 +15,7 @@ interface FormState {
 }
 
 export function App() {
-  const { habits, createHabit, updateHabit, deleteHabit, toggleCompletion } = useHabits()
+  const { habits, loading, error, createHabit, updateHabit, deleteHabit, toggleCompletion } = useHabits()
   const [selectedHabit, setSelectedHabit] = useState<Habit | null>(null)
   const [formState, setFormState] = useState<FormState>({
     isOpen: false,
@@ -37,17 +37,17 @@ export function App() {
     setFormState({ isOpen: false, mode: 'create', editingHabit: null })
   }
 
-  function handleSaveForm(data: HabitFormData) {
+  async function handleSaveForm(data: HabitFormData) {
     if (formState.mode === 'edit' && formState.editingHabit) {
-      updateHabit(formState.editingHabit.id, data)
+      await updateHabit(formState.editingHabit.id, data)
     } else {
-      createHabit(data)
+      await createHabit(data)
     }
     handleCloseForm()
   }
 
-  function handleDeleteHabit(id: string) {
-    deleteHabit(id)
+  async function handleDeleteHabit(id: string) {
+    await deleteHabit(id)
     setSelectedHabit(null)
   }
 
@@ -62,6 +62,31 @@ export function App() {
   const activePanelHabit = selectedHabit
     ? habits.find((h) => h.id === selectedHabit.id) ?? null
     : null
+
+  if (loading) {
+    return (
+      <div className={styles.app}>
+        <Header onInfoClick={() => setIsInfoOpen(true)} />
+        <div className={styles.emptyState}>
+          <span className={styles.emptyIcon}>⏳</span>
+          <h2 className={styles.emptyTitle}>Carregando hábitos...</h2>
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className={styles.app}>
+        <Header onInfoClick={() => setIsInfoOpen(true)} />
+        <div className={styles.emptyState}>
+          <span className={styles.emptyIcon}>⚠️</span>
+          <h2 className={styles.emptyTitle}>{error}</h2>
+          <p className={styles.emptyText}>Verifique se o servidor está rodando</p>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className={styles.app}>

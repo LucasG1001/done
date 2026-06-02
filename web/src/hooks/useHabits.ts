@@ -1,104 +1,67 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import type { Habit, HabitFormData } from '../types/habit'
-import { createMockHabits } from '../data/mockHabits'
+import {
+  fetchHabits,
+  createHabit as apiCreateHabit,
+  updateHabit as apiUpdateHabit,
+  deleteHabit as apiDeleteHabit,
+  toggleHabitCompletion,
+} from '../services/habitApi'
 import { calculateCurrentStreak, calculateLongestStreak } from '../utils/streakUtils'
 import { calculateLevel } from '../utils/levelUtils'
 
 interface UseHabitsReturn {
   habits: Habit[]
-  createHabit: (data: HabitFormData) => void
-  updateHabit: (id: string, data: HabitFormData) => void
-  deleteHabit: (id: string) => void
-  toggleCompletion: (habitId: string, date: string) => void
+  loading: boolean
+  error: string | null
+  createHabit: (data: HabitFormData) => Promise<void>
+  updateHabit: (id: string, data: HabitFormData) => Promise<void>
+  deleteHabit: (id: string) => Promise<void>
+  toggleCompletion: (habitId: string, date: string) => Promise<void>
 }
 
 function recalculateHabitStats(habit: Habit): Habit {
   const currentStreak = calculateCurrentStreak(habit.completions, habit.selectedDays)
   const longestStreak = calculateLongestStreak(habit.completions, habit.selectedDays, habit.createdAt)
   const level = calculateLevel(longestStreak, habit.completions, habit.selectedDays)
-
-  return {
-    ...habit,
-    currentStreak,
-    longestStreak,
-    level,
-  }
-}
-
-function initializeHabits(): Habit[] {
-  return createMockHabits().map(recalculateHabitStats)
+  return { ...habit, currentStreak, longestStreak, level }
 }
 
 export function useHabits(): UseHabitsReturn {
-  const [habits, setHabits] = useState<Habit[]>(initializeHabits)
+  const [habits, setHabits] = useState<Habit[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
-  function createHabit(data: HabitFormData): void {
-    const now = new Date().toISOString()
-    const newHabit: Habit = {
-      id: crypto.randomUUID(),
-      name: data.name,
-      selectedDays: data.selectedDays,
-      completions: [],
-      currentStreak: 0,
-      longestStreak: 0,
-      level: 1,
-      createdAt: now,
-      updatedAt: now,
-    }
+  useEffect(() => {
+    fetchHabits()
+      .then((data) => setHabits(data.map(recalculateHabitStats)))
+      .catch(() => setError('Não foi possível carregar os hábitos'))
+      .finally(() => setLoading(false))
+  }, [])
 
-    setHabits((prev) => [...prev, newHabit])
+  async function createHabit(data: HabitFormData): Promise<void> {
+    const created = await apiCreateHabit(data)
+    setHabits((prev) => [...prev, recalculateHabitStats(created)])
   }
 
-  function updateHabit(id: string, data: HabitFormData): void {
+  async function updateHabit(id: string, data: HabitFormData): Promise<void> {
+    const updated = await apiUpdateHabit(id, data)
     setHabits((prev) =>
-      prev.map((habit) => {
-        if (habit.id !== id) return habit
-        return recalculateHabitStats({
-          ...habit,
-          name: data.name,
-          selectedDays: data.selectedDays,
-          updatedAt: new Date().toISOString(),
-        })
-      })
+      prev.map((h) => (h.id === id ? recalculateHabitStats(updated) : h))
     )
   }
 
-  function deleteHabit(id: string): void {
-    setHabits((prev) => prev.filter((habit) => habit.id !== id))
+  async function deleteHabit(id: string): Promise<void> {
+    await apiDeleteHabit(id)
+    setHabits((prev) => prev.filter((h) => h.id !== id))
   }
 
-  function toggleCompletion(habitId: string, date: string): void {
+  async function toggleCompletion(habitId: string, date: string): Promise<void> {
+    const updated = await toggleHabitCompletion(habitId, date)
     setHabits((prev) =>
-      prev.map((habit) => {
-        if (habit.id !== habitId) return habit
-
-        const existingIndex = habit.completions.findIndex((c) => c.date === date)
-        let updatedCompletions = [...habit.completions]
-
-        if (existingIndex >= 0) {
-          const existing = updatedCompletions[existingIndex]!
-          updatedCompletions[existingIndex] = {
-            ...existing,
-            completed: !existing.completed,
-          }
-        } else {
-          updatedCompletions.push({ date, completed: true })
-        }
-
-        return recalculateHabitStats({
-          ...habit,
-          completions: updatedCompletions,
-          updatedAt: new Date().toISOString(),
-        })
-      })
+      prev.map((h) => (h.id === habitId ? recalculateHabitStats(updated) : h))
     )
   }
 
-  return {
-    habits,
-    createHabit,
-    updateHabit,
-    deleteHabit,
-    toggleCompletion,
-  }
+  return { habits, loading, error, createHabit, updateHabit, deleteHabit, toggleCompletion }
 }
