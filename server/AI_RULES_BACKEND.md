@@ -126,15 +126,16 @@ VPS: 187.77.62.157  (user: lucas)
 docker-compose.yml (na raiz do projeto):
   ├── postgres   → volume persistente (postgres_data)
   ├── server     → conecta em postgres:5432
-  └── web/nginx  → 127.0.0.1:8080 (invisível externamente)
+  └── web/nginx  → Porta 8080 (bloqueada via UFW para a internet)
                    /api/* proxied para server:3333
 ```
 
-**Acesso à produção via SSH tunnel:**
-```bash
-ssh -L 8080:localhost:8080 lucas@187.77.62.157
-# abrir: http://localhost:8080
-```
+**Segurança e Acesso Remoto (VPN):**
+Para acessar o app do celular ou de outros computadores de forma segura (sem expor o web app à internet aberta), a VPS utiliza o **WireGuard VPN** e o firewall **UFW**.
+- O container web expõe a porta `8080`.
+- O UFW bloqueia acessos públicos (`sudo ufw deny 8080`) e libera apenas conexões da interface da VPN (`sudo ufw allow in on wg0 to any port 8080`).
+- **Como Acessar:** Com o WireGuard ativado no seu dispositivo (usando o perfil de cliente gerado na VPS), basta abrir `http://187.77.62.157:8080` no navegador.
+- *Nota: Não é mais necessário usar SSH Tunnel (`ssh -L`) para acessar o web app se você estiver conectado à VPN.*
 
 Variáveis de ambiente de produção ficam em `.env` na **raiz do projeto** na VPS (nunca no git). Template em `.env.example`.
 
